@@ -1,0 +1,126 @@
+<###############
+Author : Saikiran Reddy Sama
+Script Use : Reset Multi Factor Authentication from Exchange Online Using a Simple GUI Tool
+Inputs : Provide UPN to Reset MFA from Tool.
+############>
+#calling assemblies
+#Add-Type -AssemblyName System.windows.forms
+[void] [System.Reflection.Assembly]::LoadWithPartialName("System.Drawing") 
+[void] [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms")  #loading the necessary .net libraries (using void to suppress output)
+
+
+
+#Defining Form here
+$MFAFORM = New-Object System.Windows.Forms.Form
+$MFAFORM.Width = 1000;
+$MFAFORM.Height = 580;
+$MFAFORM.Text = "Reset Multi-Factor Authentication"
+$MFAFORM.StartPosition = "CenterScreen"
+$MFAFORM.AutoSizeMode = "GrowandShrink"
+$MFAFORM_Image = [system.drawing.image]::FromFile("IMAGE PATH HERE")
+$MFAFORMIcon = New-Object system.drawing.icon ("ICON PATH HERE")
+$MFAFORM.BackgroundImage = $MFAFORM_Image
+#Form Definition ends here
+
+
+
+Function ResetMFA{
+    
+    Write-Output "Please Connect to MSOL Service By authenticating yourself" | Out-String
+    Connect-MsolService
+        
+    $mfaid = $MFAFORM_TextBox1.Text
+        
+    
+    $UPN = (Get-ADUser -Identity $mfaid -Properties *).UserPrincipalName 
+
+    $MFAFORM_OutputBox1.Text = $UPN | Out-String
+    Sleep 2
+
+    #Resetting MFA CMDLET
+    Set-MsolUser -UserPrincipalName $UPN -StrongAuthenticationMethods @() -StrongAuthenticationRequirements @()
+    $MFAFORM_OutputBox1.Text = Write-Output "MFA Disabled, Please setup again by logging in/ login to aka.ms/mfasetup" | Out-String
+}
+
+
+#define label1 lets call it label1
+$MFAFORM_label1 = New-Object System.Windows.Forms.Label
+    $MFAFORM_label1.Left = 15;
+    $MFAFORM_label1.Top = 25;
+    $MFAFORM_label1.Text = "Enter Name"
+    $MFAFORM_font = New-Object System.Drawing.Font("Comic Sans Ms",10,[System.Drawing.FontStyle]::Bold)
+    $MFAFORM_label1.Font = $MFAFORM_font
+    $MFAFORM_label1.AutoSize = $true
+
+#Defining Textbox for label1
+$MFAFORM_TextBox1 = New-Object System.Windows.Forms.TextBox
+    $MFAFORM_TextBox1.Left = 200;
+    $MFAFORM_TextBox1.Top = 25;
+    $MFAFORM_TextBox1.Height = 250;
+    $MFAFORM_TextBox1.Width = 250;
+    
+
+#Define OK Button
+    $MFAFORM_OkayButton1 = New-Object “System.Windows.Forms.Button”;
+    $MFAFORM_OkayButton1.Left = 210;
+    $MFAFORM_OkayButton1.Top = 100;
+    $MFAFORM_OkayButton1.Width = 100;
+    $MFAFORM_OkayButton1.Text = “Okay”;
+    $MFAFORM_OkayButton1.add_click({
+
+        #function here. 
+       # Write-Output "Retrieving Mailbox Statistics, HOLD ON!" | Out-String
+                       ResetMFA | Out-String
+    })
+
+
+  
+    #button4
+    $MFAFORM_Clearbutton = New-Object System.Windows.Forms.Button
+    $MFAFORM_Clearbutton.Left = 320 
+    $MFAFORM_Clearbutton.Top = 100 
+    $MFAFORM_Clearbutton.Width = 100
+    $MFAFORM_Clearbutton.Text = "Reset"
+    $MFAFORM_Clearbutton.Add_click({
+           
+       $MFAFORM_OutputBox1.Clear()
+       $MFAFORM_TextBox1.Clear()
+       
+    })
+
+    
+
+    $MFAFORM_OutputBox1 = New-Object System.Windows.Forms.TextBox
+    $MFAFORM_OutputBox1.Left = 200;
+    $MFAFORM_OutputBox1.Top = 150;
+    $MFAFORM_OutputBox1.Height = 60;
+    $MFAFORM_OutputBox1.Width = 270;
+    $MFAFORM_OutputBox1.Multiline = $true
+    $MFAFORM_OutputBox1.AppendText(($textbox1.Text))
+    $MFAFORM_OutputBox1.AutoSize = $true
+    $MFAFORM_OutputBox1.ScrollBars = "Vertical"
+    $MFAFORM_OutputBox1.TextAlign = "Left"
+    $MFAFORM_OutputBox1.WordWrap = $true
+    #$TestForm_OutputBox1.WordWrap = $true
+    $MFAFORM_OutputBox1.Update()
+  
+
+  #Adding Controls to Form
+$MFAFORM.Controls.Add($MFAFORM_label1)
+$MFAFORM.Controls.Add($MFAFORM_TextBox1)
+$MFAFORM.Controls.Add($MFAFORM_OkayButton1)
+$MFAFORM.Controls.Add($MFAFORM_Clearbutton)
+$MFAFORM.Controls.Add($MFAFORM_OutputBox1)
+$MFAFORM.Icon = $MFAFORMIcon
+
+############# This is when you have to close the Form after getting values
+    $eventHandler = [System.EventHandler]{
+    #$TestForm.Close();
+    };
+
+$MFAFORM_OkayButton1.Add_Click($eventHandler) ;
+
+$MFAFORM.Add_Shown({$MFAFORM.Activate()})
+
+#form output by showdialag
+[void]$MFAFORM.ShowDialog() 
