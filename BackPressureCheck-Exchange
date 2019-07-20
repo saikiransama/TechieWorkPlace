@@ -1,0 +1,43 @@
+
+<#
+    Author : Saikiran Reddy Sama.
+    Description : Checks Backpressure State on Servers
+ --------------------------------------------------
+    Servers:
+ .\Specifies when was the last backpressure time and state
+
+#>
+
+#Get list of Hub Transport servers in the organization
+[array]$AllServers = @(Get-ExchangeServer | Where-Object {$_.IsHubTransportServer})
+
+foreach($server in $AllServers){
+
+    $EventLogs = @(Invoke-Command –Computername $server –ScriptBlock { Get-EventLog -LogName Application | Where-Object {$_.Source -eq "MSExchangeTransport" -and $_.Category -eq "ResourceManager"} })
+	$count = $EventLogs.count
+    
+    if ($count -lt 1)
+	{
+		Write-Host "$server has no back pressure events."
+	}
+
+    else
+	{
+		$lastevent = $EventLogs | Select-Object -First 1
+
+		$now = Get-Date
+		$timewritten = $lastevent.TimeWritten
+		$totalhours = "{0:N0}" -f ($now - $timewritten).TotalHours 
+		
+		switch ($lastevent.EventID)
+		{
+			"15006" { $BPstate = "Critical (Diskspace)" }
+			"15007" { $BPstate = "Critical (Memory)" }
+			default { $BPstate = $lastevent.ReplacementStrings[1] }
+		}
+
+		Write-Host "$server is $BPstate as of $ago hours ago"
+        Write-Output "$server is $BPstate as of $totalhours hours ago" | Out-File BackpressureLogs.txt -Append
+	}
+
+}
