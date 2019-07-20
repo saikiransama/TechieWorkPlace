@@ -1,0 +1,13 @@
+$dsq3s = Get-Content "File Path here"
+
+foreach($d in $dsq3s){
+
+   # Get-ADUser $d -Properties * | Select DisplayName,GivenName,SN,Mail
+   # Get-ADUser $d -Properties * | Select Samaccountname,Mail,@{Name="MailinO365";Expression={(Get-Mailbox -Identity $_.Samaccountname).primarysmtpaddress}}
+    
+    $Givenname = (Get-ADUser -Identity $d -Properties *).givenname
+    $Surname = (Get-ADUser -Identity $d -Properties *).SN
+    $EMAILADDR = $Givenname+"."+$Surname+"@abc.com"
+    Set-ADUser $d -Replace @{Mail=$EMAILADDR}
+   
+}
