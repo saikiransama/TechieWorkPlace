@@ -1,0 +1,202 @@
+###########################################################
+#                                                         #
+#                    Access  V1.1                         #
+#                                                         #
+#                     BY                                  #
+#                                                         # 
+#              SAI KIRAN REDDY SAMA                       #
+#                                                         #
+#                                                         #
+###########################################################
+
+#calling assemblies
+#Add-Type -AssemblyName System.windows.forms
+[void] [System.Reflection.Assembly]::LoadWithPartialName("System.Drawing") 
+[void] [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms")  #loading the necessary .net libraries (using void to suppress output)
+
+
+
+
+function dropmenu{
+
+    $sel = $drop1.SelectedItem.ToString()
+    if($sel -eq "FullAccess"){
+    $srcmbx = $textbox1.Text
+    $target = $opBox.Text
+    $opBox.Text =  Add-MailboxPermission -Identity $srcmbx -User $target -AccessRights FullAccess -AutoMapping $false | Out-String
+    }   
+
+    elseif($sel -eq "RemoveAccess"){
+        
+        $srcmbx = $textbox1.Text
+    $target = $opBox.Text
+    $opBox.Text =  Remove-MailboxPermission -Identity $srcmbx -User $target -AccessRights FullAccess -InheritanceType All | Out-String
+    sleep 2    
+    Write-Output "Checking again..." | Out-String
+    Sleep 2
+    $opBox.Text = Get-MailboxPermission $srcmbx | Where-Object {-not ($_.user -match "NT Authority") -and -not ($_.user -match "NAMPRD15")} | Out-String
+
+    }
+     else
+     {
+        Write-Output "Nothing selected" | Out-String
+     }
+}
+
+
+ 
+#creating a form to place everything
+
+$form = New-Object System.Windows.Forms.Form
+    $Form.Width = 500;
+    $Form.Height = 500;
+    $Form.Text = 'ACCESS TOOL'
+   # $Form.StartPosition = [System.Windows.Forms.FormStartPosition]::CenterScreen;
+    $Form.TopMost = $true
+
+#define label1 lets call it label1
+$label1 = New-Object System.Windows.Forms.Label
+    $label1.Left = 10;
+    $label1.Top = 15;
+    $label1.Text = 'Enter ID'
+
+#define label1 lets call it label1
+$label2 = New-Object System.Windows.Forms.Label
+    $label2.Left = 100;
+    $label2.Top = 185;
+    $label2.Text = 'BY '+'S'+'A'+'I'+'K'+'I'+'R'+'A'+'N'
+    $font = New-Object System.Drawing.Font("Impact",10,[System.Drawing.FontStyle]::Bold)
+    $label2.Font = $font
+
+#define label1 lets call it label1
+$droptext = New-Object System.Windows.Forms.Label
+    $droptext.Left = 20;
+    $droptext.Top = 55;
+    $droptext.Text = 'Choose:'
+    
+[Array]$DropDownArray = "FullAccess", "RemoveAccess"    
+
+#define dropdown
+$drop1 = New-Object System.Windows.Forms.ComboBox
+    $drop1.Location = New-Object System.Drawing.Size(130,50)
+    $drop1.Size = New-Object System.Drawing.Size(150,50)
+    $drop1.Text = "Select access Scope"
+    
+    
+
+ForEach ($Item in $DropDownArray) {
+     [void] $Drop1.Items.Add($Item)
+    }
+
+
+#defining text box for the labels
+$textbox1 = New-Object System.Windows.Forms.TextBox
+    $textbox1.Left = 200;
+    $textbox1.Top = 15;
+    $textbox1.width = 250;
+
+#Define OK Button
+    $drbut = New-Object “System.Windows.Forms.Button”;
+    $drbut.Left = 150;
+    $drbut.Top = 120;
+    $drbut.Width = 100;
+    $drbut.Text = “SUBMIT”;
+    $drbut.add_click({
+
+        #function here. 
+        dropmenu
+               
+    })
+
+
+    #button2
+    $button2 = New-Object System.Windows.Forms.Button
+    $button2.Left = 10
+    $button2.Top = 80
+    $button2.Width = 100
+    $button2.Text = "Connect 365"
+    $button2.Add_click({
+           
+        office365
+        #connection here
+
+    })
+
+    #button3
+    $button3 = New-Object System.Windows.Forms.Button
+    $button3.Left = 110
+    $button3.Top = 80
+    $button3.Width = 100
+    $button3.Text = "Connect2016"
+    $button3.Add_click({
+           
+       connect2016
+       # exchange connect here
+    })
+
+    
+
+    #button5
+    $button5 = New-Object System.Windows.Forms.Button
+    $button5.Left = 310
+    $button5.Top = 80
+    $button5.Width = 100
+    $button5.Text = "ConnectMS"
+    $button5.Add_click({
+           
+       Connect-MsolService
+       #MSOL optional
+    })
+
+    #button4
+    $button4 = New-Object System.Windows.Forms.Button
+    $button4.Left = 210
+    $button4.Top = 80
+    $button4.Width = 100
+    $button4.Text = "clear"
+    $button4.Add_click({
+           
+       $opBox.Clear()
+       $textbox1.Clear()
+       
+    })
+    
+############# This is when you have to close the Form after getting values
+    $eventHandler = [System.EventHandler]{
+   # $Form.Close();
+   #Write-Output -ErrorAction SilentlyContinue | Out-String
+    }
+
+$drbut.Add_Click($eventHandler) ;
+
+$opBox = New-Object System.Windows.Forms.TextBox
+    $opBox.Location = New-Object System.Drawing.Size(10,220)
+    $opBox.Size = New-Object System.Drawing.Size(465,160)
+    $opBox.MultiLine = $True
+    $opBox.ScrollBars = "Vertical"
+    $opBox.AppendText(($textbox1.Text))
+    $opBox.AutoSize = $true
+    $opBox.Update()
+
+
+#now adding controls to the above declared labels and text and button....
+    $form.Controls.Add($label1)
+    $form.Controls.Add($drbut)
+    $form.controls.Add($textbox1)
+    $Form.Controls.Add($opBox)
+    $form.Controls.Add($button2)
+    $form.Controls.Add($button3)
+    $form.Controls.Add($button4)
+    $form.Controls.Add($button5)
+    $form.Controls.Add($label2)
+    $form.Controls.Add($drop1)
+    $form.Controls.Add($droptext)
+
+
+
+#$form.Add_Shown({$form.Activate()})
+
+#form output by showdialag
+[void]$form.ShowDialog() 
+ 
+
